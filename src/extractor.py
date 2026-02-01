@@ -5,6 +5,8 @@ import requests
 
 
 class DataExtractor:
+    ## @brief Contrutor da classe DataExtractor
+    #  @param base_url URL base de onde baixar arquivos
     def __init__(self, base_url, output_dir="dados/raw", extract_dir="dados/extracted"):
         self.base_url = base_url
         self.output_dir = Path(output_dir)
@@ -13,6 +15,9 @@ class DataExtractor:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.extract_dir.mkdir(parents=True, exist_ok=True)
 
+    ## @brief Função para baixar arquivos
+    #  @param url URL para baixar arquivo
+    #  @param nome_arquivo Nome para ser alvo após download
     def baixar_arquivo(self, url, nome_arquivo):
         """Baixa um arquivo específico"""
         destino = self.output_dir / nome_arquivo
@@ -30,6 +35,8 @@ class DataExtractor:
             print(f"Erro: {e}\n")
             return None
 
+    ## @brief Função para baixar trimestre de um ano
+    #  @param ano Ano para ser baixado os arquivos
     def baixar_trimestre(self, ano):
         """Baixa todos os arquivos de um ano"""
         base_url = f"{self.base_url}/{ano}/"
@@ -48,11 +55,11 @@ class DataExtractor:
         print(f"Baixado = {len(todos_extraidos)}")
         return todos_extraidos
 
+    ## @brief Função para desempacotar arquivos zipados
+    #  @param zip_path Path do arquivo
     def extrair_zip(self, zip_path):
-        """Extrai um arquivo ZIP"""
-
         pasta_destino = self.extract_dir / zip_path.stem
-        # TODO exist_ok=False
+        # TODO exist_ok=False ?
         pasta_destino.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -78,6 +85,10 @@ if __name__ == "__main__":
     )
 
     arquivos = extractor.baixar_trimestre(ano=2025)
+    operadoras = extractor.baixar_arquivo(
+        "https://dadosabertos.ans.gov.br/FTP/PDA/operadoras_de_plano_de_saude_ativas/Relatorio_cadop.csv",
+        "Relatorio_cadop",
+    )
 
     for arq in arquivos:
         print(f"   {arq}")

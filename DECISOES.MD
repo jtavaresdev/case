@@ -27,5 +27,6 @@ entretanto como vou verificar os CNPJs decidi modularizar
 e criar uma classe específica para isso, pois caso
 mude a lógica de négocio seja fácil de refatorar.
 ### Trade-Off
-Decidi armazenar os dados inválidos em outros csv para
-ter acesso a eles em um outro momento.
+Decidi armazenar todo os dados, entretanto, pegar
+as estastisticas dessas inconsistencias e armazenar
+os CNPJs duplicados.
