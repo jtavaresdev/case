@@ -1,7 +1,10 @@
+import zipfile
 from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
+
+from validator import DataValidator
 
 
 class DataProcessor:
@@ -11,11 +14,7 @@ class DataProcessor:
         self.relatorio_cadop_path = Path("dados/raw/Relatorio_cadop")
         # Preciso de mais contexto para saber melhor keywords
         self.keywords = ["EVENTOS", "SINISTROS", "SINISTRO"]
-        self.inconsistencias = {
-            "cnpjs_duplicados": [],
-            "valores_zerados": 0,
-            "valores_negativos": 0,
-        }
+        self.validador = DataValidator()
 
     ## @brief Lê arquivo .csv
     #  @param file_path Path do arquivo
@@ -67,18 +66,6 @@ class DataProcessor:
 
         print(f"Total: {len(dataframes)} arquivos processados com sucesso")
         return dataframes
-
-    # TODO
-    def get_inconsistencias(self, data_frame: pd.DataFrame):
-        # CNPJ TODO
-        # ZEROS
-        zerados = (data_frame["ValorDespesas"] == 0).sum()
-        self.inconsistencias["valores_zerados"] += zerados
-        # NEGATIVOS
-        negativos = (data_frame["ValorDespesas"] < 0).sum()
-        self.inconsistencias["valores_negativos"] += negativos
-
-        return
 
     ## @brief Processa trimestre e ano
     #  @param data_frama Arquivo para ser processado
@@ -137,18 +124,50 @@ class DataProcessor:
 
         if "CNPJ" in df.columns:
             df["CNPJ"] = df["CNPJ"].apply(
-                lambda x: str(int(float(x))) if pd.notna(x) and str(x) != "nan" else x
+                lambda x: str(int(float(x)))
+                if pd.notna(x) and str(x) != "nan"
+                else "PENDENTE"
             )
-
+        else:
+            df["CNPJ"] = "PENDENTE"
         return df
+
+    ## @brief Função para agregar dados
+    #  @param data_frame Arquivo para ser agregado
+    #  @param keys List[str] Lista de colunas para serem agrupados
+    def agregar_csv(self, data_frame: pd.DataFrame, keys: List[str]):
+        if not isinstance(keys, list):
+            print(f"{keys} não é uma instância de List")
+            return pd.DataFrame()
+        if not keys:
+            return data_frame
+
+        df_agrupado = data_frame.groupby(keys, as_index=False).agg(
+            Soma_Despesas=("ValorDespesas", "sum"),
+            Desvio_Padrao_Despesas=("ValorDespesas", "std"),
+        )
+
+        return df_agrupado
+
+    ## @brief Função para zipar arquivos da pasta output
+    #  @param file_path Path para pasta com arquivos .csv
+    #  @param file_name Nome para o arquivo zipado
+    def zip_csv(self, file_path: Path, file_name: str):
+        pasta = file_path
+
+        with zipfile.ZipFile(file_name, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for arquivo in pasta.rglob("*.csv"):
+                zipf.write(arquivo, arquivo.relative_to(pasta))
+                print(f"Adicionado: {arquivo.name}")
 
     ## @brief Função para consolidar e exportar o .csv final
     #  @param dataframes List com Dataframes
-    #  @param output_path Path para onde o .csv final vai ser salvado
+    #  @param output_path Path para onde o .csv final vai ser salvado + nome do arquivo
     def consolidar_e_exportar(self, dataframes: List[pd.DataFrame], output_path: Path):
         if not dataframes:
             print("Nenhum dado para consolidar")
             return
+
         df_consolidado = pd.concat(dataframes, ignore_index=True)
 
         if "VL_SALDO_INICIAL" in df_consolidado.columns:
@@ -177,10 +196,9 @@ class DataProcessor:
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        self.get_inconsistencias(df_consolidado)
-
         df_relatorio = self.read_csv(self.relatorio_cadop_path)
         if df_relatorio is None:
+            print("Relatório CADOP não encontrado")
             return None
 
         df_consolidado = self.join_registro_ans(
@@ -190,6 +208,79 @@ class DataProcessor:
             "REGISTRO_OPERADORA",
             ["CNPJ", "Razao_Social", "Modalidade", "UF"],
         )
+        df_consolidado = self.validador.valid_collum_not_null(
+            df_consolidado, "Razao_Social"
+        )
+
+        df_validos, df_invalidos = self.validador.validade_cnpjs(df_consolidado, "CNPJ")
+
+        if len(df_invalidos) > 0:
+            invalidos_path = output_path.parent / "cnpjs_invalidos.csv"
+            df_invalidos, df_pendentes = self.validador.validate_collum_str(
+                df_invalidos
+            )
+
+            if len(df_pendentes) > 0:
+                pendentes_path = output_path.parent / "razao_social_pendentes.csv"
+
+                colunas_pendentes = [
+                    "RegistroANS",
+                    "CNPJ",
+                    "Razao_Social",
+                    "Trimestre",
+                    "Ano",
+                    "ValorDespesas",
+                ]
+
+                df_pendentes[colunas_pendentes].to_csv(
+                    pendentes_path,
+                    index=False,
+                    sep=";",
+                    encoding="utf-8-sig",
+                    decimal=".",
+                )
+
+            colunas_invalidos = [
+                "RegistroANS",
+                "CNPJ",
+                "Razao_Social",
+                "Trimestre",
+                "Ano",
+                "ValorDespesas",
+            ]
+
+            df_invalidos[colunas_invalidos].to_csv(
+                invalidos_path,
+                index=False,
+                sep=";",
+                encoding="utf-8-sig",
+                decimal=".",
+            )
+
+        # df_consolidado = df_validos
+
+        df_numeros_validos, df_numeros_invalidos = self.validador.validade_number(
+            df_validos
+        )
+        if len(df_numeros_invalidos) > 0:
+            numeros_invalidos_path = output_path.parent / "numeros_invalidos.csv"
+            colunas_num = [
+                "RegistroANS",
+                "CNPJ",
+                "Razao_Social",
+                "Trimestre",
+                "Ano",
+                "ValorDespesas",
+            ]
+            df_numeros_invalidos[colunas_num].to_csv(
+                numeros_invalidos_path,
+                index=False,
+                sep=";",
+                encoding="utf-8-sig",
+                decimal=".",
+            )
+
+        df_consolidado = df_numeros_validos
 
         df_consolidado = df_consolidado[
             [
@@ -204,6 +295,14 @@ class DataProcessor:
                 "DESCRICAO",
             ]
         ]
+        df_agrupado = self.agregar_csv(df_numeros_validos, ["UF", "Razao_Social"])
+        df_agrupado.to_csv(
+            output_path.parent / "despesas_agregadas.csv",
+            index=False,
+            sep=";",
+            encoding="utf-8-sig",
+            decimal=".",
+        )
 
         df_consolidado.to_csv(
             output_path,
@@ -212,6 +311,7 @@ class DataProcessor:
             encoding="utf-8-sig",
             decimal=".",
         )
+        self.zip_csv(output_path.parent, "Teste_{JoaoVictorTavares}.zip")
 
 
 if __name__ == "__main__":

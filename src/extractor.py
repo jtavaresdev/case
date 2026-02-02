@@ -7,11 +7,19 @@ import requests
 class DataExtractor:
     ## @brief Contrutor da classe DataExtractor
     #  @param base_url URL base de onde baixar arquivos
-    def __init__(self, base_url, output_dir="dados/raw", extract_dir="dados/extracted"):
+    def __init__(
+        self,
+        base_url,
+        raw_dir="dados/raw",
+        output_dir="dados/output",
+        extract_dir="dados/extracted",
+    ):
         self.base_url = base_url
+        self.raw_dir = Path(raw_dir)
         self.output_dir = Path(output_dir)
         self.extract_dir = Path(extract_dir)
 
+        self.raw_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.extract_dir.mkdir(parents=True, exist_ok=True)
 
@@ -20,7 +28,7 @@ class DataExtractor:
     #  @param nome_arquivo Nome para ser alvo após download
     def baixar_arquivo(self, url, nome_arquivo):
         """Baixa um arquivo específico"""
-        destino = self.output_dir / nome_arquivo
+        destino = self.raw_dir / nome_arquivo
 
         try:
             response = requests.get(url, stream=True, timeout=60)

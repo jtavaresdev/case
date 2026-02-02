@@ -1,5 +1,4 @@
 venv/
 dados/
-*.zip
 *.csv
 __pycache__/
