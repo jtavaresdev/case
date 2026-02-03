@@ -311,7 +311,7 @@ class DataProcessor:
             encoding="utf-8-sig",
             decimal=".",
         )
-        self.zip_csv(output_path.parent, "Teste_{JoaoVictorTavares}.zip")
+        self.zip_csv(output_path.parent, "Teste_JoaoVictorTavares.zip")
 
 
 if __name__ == "__main__":

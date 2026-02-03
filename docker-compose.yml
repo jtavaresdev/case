@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ans_postgres
+    environment:
+      POSTGRES_DB: ans_database
+      POSTGRES_USER: DB_USER
+      POSTGRES_PASSWORD: ans_pass123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./dados/output:/csv_data/output
+      - ./dados/raw:/csv_data/raw
+    networks:
+      - ans_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ans_user -d ans_database"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  ans_network:
+    driver: bridge

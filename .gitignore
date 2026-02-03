@@ -1,4 +1,5 @@
 venv/
 dados/
 *.csv
+.env
 __pycache__/

@@ -36,3 +36,16 @@ Para o Join decidi criar uma função ´join_registro_ans´ utilizando
 metodos nativos do pandas para faer um "left join"
 Decidi utilizar metodos nativos para manter o padrão e que, ainda é 
 performático o bastante para essa quantidade de dados.
+
+# 3. TESTE DE BANCO DE DADOS E ANÁLISE
+
+## 3.2.1 Trade-Off
+Para os DDL decidi fazer uma modelagem HÍBRIDA
+Tabelas normalizadas para operados e despesas
+despesas_agregadas DESNORMALIZADAS
+
+Motivos: Normalizadas mantém a integridade de dados
+         Desnormalizadas Performace em queries analíticas
+## 3.2.2 Trade-Off
+Tipos de dados -> Valores monetários = NUMERIC(15,2) MOTIVO = Precisão
+DATAS = INTEGER MOTIVO = Comodidade, dados ja vem assim
