@@ -1,0 +1,22 @@
+# API Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# Database - usar psycopg em vez de binary
+psycopg2==2.9.9
+sqlalchemy==2.0.25
+
+# Validação - sem versão fixa para pydantic-core
+pydantic>=2.5.0,<3.0.0
+pydantic-settings==2.1.0
+
+# CORS
+python-multipart==0.0.6
+
+# Utilitários
+python-dotenv==1.0.0
+
+# Desenvolvimento
+pytest==7.4.4
+httpx==0.26.0
+black==24.1.1
