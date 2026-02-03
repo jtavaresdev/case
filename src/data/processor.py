@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import pandas as pd
 
-from validator import DataValidator
+from src.data.validator import DataValidator
 
 
 class DataProcessor:
@@ -124,9 +124,11 @@ class DataProcessor:
 
         if "CNPJ" in df.columns:
             df["CNPJ"] = df["CNPJ"].apply(
-                lambda x: str(int(float(x)))
-                if pd.notna(x) and str(x) != "nan"
-                else "PENDENTE"
+                lambda x: (
+                    str(int(float(x)))
+                    if pd.notna(x) and str(x) != "nan"
+                    else "PENDENTE"
+                )
             )
         else:
             df["CNPJ"] = "PENDENTE"

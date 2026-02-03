@@ -190,6 +190,13 @@ Resposta esperada:
 }
 ```
 
+### Testes
+
+Para rodar os testes pastar digitar na raiz do código:
+```bash
+pytest  -v --cov=src
+```
+
 ### Verificar Banco
 
 ```bash
