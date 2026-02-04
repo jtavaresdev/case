@@ -199,5 +199,4 @@ docker exec -i ans_postgres psql -U ans_user -d ans_database < src/database/impo
 
 **Implementação:**
 - Busca inicial: Servidor (endpoint com parâmetro `search`)
-- Debounce: 500ms para evitar requisições excessivas
 - Cache: Dados já carregados permanecem no cliente
